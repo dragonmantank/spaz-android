@@ -1,29 +1,100 @@
 <html>
 <head>
+    <title>Spaz for Android</title>
 
+    <!-- Spazcore Vendor Files -->
+    <script type="text/javascript" src="spazcore/vendors/jquery-1.3.2.js"></script>
+    <script type="text/javascript" src="spazcore/vendors/date.js"></script>
+    <script type="text/javascript" src="spazcore/vendors/json2.js"></script>
+    <script type="text/javascript" src="spazcore/vendors/shortcut.js"></script>
+    <script type="text/javascript" src="spazcore/vendors/sizzle.js"></script>
+    <script type="text/javascript" src="spazcore/vendors/underscore.js"></script>
 
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
-	<title>Hello Mobile</title>
-	<script type="text/javascript" src="index.js"></script>
-	<link href="index.css" rel="stylesheet" type="text/css"/>
+    <!-- Spazcore Files -->
+    <script type="text/javascript" src="spazcore/builds/spazcore-standard.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spaztemplate.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spaztimeline.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spazaccounts.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spazfileuploader.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spazimageurl.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spazphotomailer.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spazprefs.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spazshorttext.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spazshorturl.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spaztimelinefilter.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spaztmdb.js"></script>
+    <script type="text/javascript" src="spazcore/libs/spaztwit.js"></script>
+
+    <script type="text/javascript">
+        var tpl = new SpazTemplate();
+        tpl.addTemplateMethod('tweet', function(d) {
+            var html = '<div class="timeline-entry';
+
+            if(!d.not_new) {
+                html += ' new';
+            }
+
+            if(d.SC_is_reply) {
+                html += ' reply';
+            }
+            html += '" data-status-id="'+d.id+'" data-user-id="'+d.user.id+'" data-user-screen_name="'+d.user.screen_name+'" data-timestamp="'+d.created_at_unixtime+'">';
+            html += '	<div class="user" data-user-id="'+d.user.id+'" data-user-screen_name="'+d.user.screen_name+'">';
+            html += '		<img src="'+d.user.profile_image_url+'" title="'+d.user.screen_name+'" />';
+            html += '	</div>';
+            html += '	<div class="status">';
+            html += '		<div class="meta-wrapper">';
+            html += '			<div class="screen-name">'+d.user.screen_name;
+            if (d.user.protected) {
+            	html += '			<div class="protected-icon"></div>';
+            }
+            html += '			</div>';
+            html += '			<div class="meta" data-status-id="'+d.id+'"><span class="date" data-created_at="'+d.created_at+'">'+d.relative_time+'</span></div>';
+            html += '		</div>';
+            html += '	 	<div class="text">';
+            html += '			'+d.text+'';
+            html += '		</div>';
+            html += '	</div>';
+            html += '</div>';
+            return html;
+        });
+
+        $().ready(function() {
+            var timelineElement = document.getElementById('friends-timeline');
+            var twitter         = new SpazTwit(null, null, {'event_target':timelineElement});
+            var timeline        = new SpazTimeline({
+                'add_method':                   'append',
+                'timeline_container_selector':  '#friends-timeline',
+                'success_event':                'new_friends_timeline_data',
+                'failure_event':                'error_friends_timeline_data',
+                'refresh_time':                 1000*60,
+                'max_items':                    50,
+                'request_data': function() {
+                    alert('Refreshing...');
+                    twitter.getFriendsTimeline();
+                },
+                'data_success': function(e, data) {
+                    alert(data);
+                    if(data != null) {
+                    	timeline.addItems(data);
+                    }
+                    sc.helpers.updateRelativeTimes('#friends-timeline div.timeline-entry span.date', 'data-created_at');
+                },
+                'data_failure': function(e, data) {
+                    alert('Oops, we done blow\'d up...');
+                },
+                'renderer': function(obj) {
+                    return tpl.parseTemplate('tweet', obj);
+                }
+            });
+
+            timeline.start();
+        });
+    </script>
 </head>
+
 <body>
-	<h2>Welcome to Titanium Mobile</h2>
-	<p>
-		Titanium Mobile is a next generation application platform
-		for building native mobile applications using web technologies
-		such as HTML and JavaScript.
-	</p>
-	<p>
-		You are using Titanium version <span id="version">...</span> 
-		on <span id="phone"></span>.
-	</p>
-	<p>
-		Why not have some good <button id="b">vibrations</button> on us?
-	</p>
-	<p> thank you  谢谢您 Спасибо Danke ありがとうございました 감사합니다 gracias merci cảm ơn bạn
-		kiitos grazie salamat tak dziękuję terima kasih tak хвала 謝謝您
-		go raibh maith agat
-	</p>
+
+<div id="friends-timeline"></div>
+
 </body>
 </html>

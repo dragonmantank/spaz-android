@@ -206,11 +206,11 @@ SpazTimeline.prototype.addItems = function(items) {
 	
 	var items_html    = [];
 	var timeline_html = '';
-	
+
 	for (var x=0; x<items.length; x++) {
 		items_html.push( this.renderItem(items[x], this.renderer) );
 	}
-	
+
 	if (this.add_method === 'append') {
 		items_html.reverse();
 		// timeline_html = '<div>'+items_html.join('')+'</div>';
@@ -222,7 +222,7 @@ SpazTimeline.prototype.addItems = function(items) {
 		this.prepend(timeline_html);
 	}
 	
-	this.removeExtraItems();
+    this.removeExtraItems();
 	
 };
 
