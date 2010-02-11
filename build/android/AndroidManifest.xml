@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="com.tankersleywebsolutions.spazandroid"
+      android:versionCode="1"
+      android:versionName="1"
+>
+	<uses-sdk android:minSdkVersion="3" />
+	<application
+    	android:icon="@drawable/appicon"
+      	android:label="spazandroid"
+      	android:name="SpazandroidApplication"
+      	android:debuggable="false"
+	>
+    	<activity
+        	android:name=".SpazandroidActivity"
+            android:label="spazandroid"
+            android:configChanges="keyboardHidden|orientation"
+            android:launchMode="singleTask"
+			android:theme="@style/Theme.Titanium"
+        >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+		<activity
+        	android:name="org.appcelerator.titanium.TitaniumActivity"
+        	android:configChanges="keyboardHidden|orientation"
+      	/>
+
+		<!-- TI_ACTIVITIES -->
+		
+<!--
+		<provider
+			android:authorities="com.tankersleywebsolutions.spazandroid.titanium"
+			android:name="org.appcelerator.titanium.TitaniumContentProvider"
+		/>
+-->
+		<service
+			android:name="org.appcelerator.titanium.TitaniumAnalyticsService"
+			android:exported="false"
+		/>
+	</application>
+	
+	<!-- TI_PERMISSIONS -->
+	
+</manifest>
