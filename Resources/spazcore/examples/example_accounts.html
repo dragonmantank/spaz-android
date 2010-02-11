@@ -1,0 +1,594 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+	<title>SpazCore Accounts Example</title>
+	
+	<!-- Load required vendor libs -->
+	<script src="../vendors/jquery-1.3.2.js" type="text/javascript" charset="utf-8"></script>
+
+	<!-- Load SpazCore base lib -->
+	<script src="spazcore-standard.js"></script>
+	
+	<!-- used for modals -->
+	<script src="js/jquery.DOMWindow.js" type="text/javascript" charset="utf-8"></script>
+	
+	
+	<link rel="stylesheet" href="css/base.css" type="text/css" media="screen" title="no title" charset="utf-8">
+	
+	<script type="text/javascript" charset="utf-8">
+	
+	
+		var Spaz = {};
+		Spaz.AccountPrefs = {};
+		
+		Spaz.AccountPrefs.init = function() {
+			
+			this.spaz_acc = new SpazAccounts();
+
+
+
+
+			this.metavals = [
+				'twitter-api-base-url',
+				'twitter-disable-direct-posting',
+				'services-pingfm-userappkey',
+				'services-pingfm-enabled',
+				'services-pingfm-sendreplies',
+				'services-shortie-email',
+				'services-shortie-secretkey',
+				'services-twitpic-sharepassword'
+			];
+
+			this.checkboxes = [
+				'twitter-disable-direct-posting',
+				'services-pingfm-enabled',
+				'services-pingfm-sendreplies',
+				'services-twitpic-sharepassword'			
+			];
+			
+			
+			var that = this;
+			
+			
+			
+			$().ready( function() {
+
+				/*
+					bind [+] button to popup
+				*/
+				$('#add_button').click(function() {
+
+					$('#ok').unbind('click');
+					$('#cancel').unbind('click');
+
+
+					$.openDOMWindow({ 
+				        windowSourceID:'#account-details' 
+				    }); 
+
+					/*
+						populate form
+					*/
+
+					$('#id_edit').val('');
+					$('#username').val('');
+					$('#password').val('');
+					$('#account-type').val(SPAZCORE_ACCOUNT_TWITTER);
+
+					/*
+						populate meta
+					*/
+					for (var i=0; i < that.metavals.length; i++) {
+						if (that.checkboxes.indexOf(that.metavals[i]) !== -1) { // is a checkbox
+							$('#'+that.metavals[i]).attr('checked', false);
+						} else {
+							$('#'+that.metavals[i]).val('')
+						}
+
+					};
+
+					/*
+						bind add button
+					*/
+					$('#ok').bind('click', function() {
+						var newaccid = Spaz.AccountPrefs.add(
+							$('#username').val(),
+							$('#password').val(),
+							$('#account-type').val()
+						).id;
+						for (var i=0; i < that.metavals.length; i++) {
+							if (that.checkboxes.indexOf(that.metavals[i]) !== -1) { // is a checkbox
+								var val = !!($('#'+that.metavals[i]+':checked').length) || false;
+							} else {
+								var val = $('#'+that.metavals[i]).val();
+							}
+							that.spaz_acc.setMeta(newaccid, that.metavals[i], val);
+						};
+
+
+						$.closeDOMWindow({
+							windowSourceID:'#account-details'
+						});
+					});
+
+					/*
+						bind cancel button
+					*/
+					$('#cancel').bind('click', function() {
+						$.closeDOMWindow({
+							windowSourceID:'#account-details'
+						});
+					});
+				});
+
+				/*
+					bind the [-] button
+				*/
+				$('#del_button').click(function() {
+					var id = Spaz.AccountPrefs.getSelectedId();
+					if (id) {
+						var deleted = that.spaz_acc.remove(id);
+						$('option[value="'+id+'"]').remove();
+					} else {
+						sch.error('Nothing selected to delete');
+					}
+				});
+
+
+				/*
+					bind the [edit] button to modal
+				*/
+				$('#edit_button').click(function() {
+
+					$('#ok').unbind('click');
+					$('#cancel').unbind('click');
+
+
+					var id = Spaz.AccountPrefs.getSelectedId();
+					if (id) {
+						var editing = that.spaz_acc.get(id);
+
+						$.openDOMWindow({ 
+					        windowSourceID:'#account-details' 
+					    }); 				
+
+						/*
+							populate form
+						*/
+
+						$('#id_edit').val(editing.id);
+						$('#username').val(editing.username);
+						$('#password').val(editing.password);
+						$('#account-type').val(editing.type);
+
+						/*
+							populate meta
+						*/
+						for (var i=0; i < that.metavals.length; i++) {
+							var val = that.spaz_acc.getMeta(editing.id, that.metavals[i]);
+							if (that.checkboxes.indexOf(that.metavals[i]) !== -1) { // is a checkbox
+								$('#'+that.metavals[i]).attr('checked', !!(val));
+							} else {
+								$('#'+that.metavals[i]).val(that.spaz_acc.getMeta(editing.id, that.metavals[i]))
+							}
+
+						};
+
+
+						/*
+							bind save button
+						*/
+						$('#ok').click(function() {
+							var editedaccid = Spaz.AccountPrefs.edit(
+								$('#id_edit').val(),
+								{
+									'username':$('#username').val(),
+									'password':$('#password').val(),
+									'type':$('#account-type').val()
+								}
+							).id;
+
+							for (var i=0; i < that.metavals.length; i++) {
+								if (that.checkboxes.indexOf(that.metavals[i]) !== -1) {
+									var val = !!($('#'+that.metavals[i]+':checked').length) || false;
+								} else {
+									var val = $('#'+that.metavals[i]).val();
+								}
+								that.spaz_acc.setMeta(editedaccid, that.metavals[i], val);
+							};
+
+							$.closeDOMWindow({
+								windowSourceID:'#editForm'
+							});
+						});
+
+						/*
+							bind cancel button
+						*/
+						$('#cancel').click(function() {
+							$.closeDOMWindow({
+								windowSourceID:'#account-details'
+							});
+						});
+
+
+					} else {
+						sch.error('Nothing selected to edit');
+					}
+
+
+				});
+
+				/*
+					if "custom" is set for type, showthe api-base-url row
+				*/
+				$('#account-type').change(function(){
+					if ($('#account-type').val() === 'custom') {
+						$("#twitter-api-base-url-row").show();
+					} else {
+						$('#twitter-api-base-url-row').hide();
+					}
+				})
+
+				/*
+					initalize with some data
+				*/
+				var accobj = Spaz.AccountPrefs.add('testuser', 'fakepassword', SPAZCORE_ACCOUNT_TWITTER);
+				accobj = Spaz.AccountPrefs.add('testuser', 'fakepassword', SPAZCORE_ACCOUNT_IDENTICA);
+				accobj = Spaz.AccountPrefs.add('blammo', 'fakepassword', SPAZCORE_ACCOUNT_STATUSNET);
+
+
+				/*
+					hide some junk
+				*/
+				$('#account-details').hide();
+				$('#twitter-api-base-url-row').hide();
+
+
+			});
+
+			
+			
+		}
+	
+		
+		
+		
+		Spaz.AccountPrefs.add = function(username, password, type) {
+			var newacct = Spaz.AccountPrefs.spaz_acc.add(username, password, type);
+			console.debug(newacct);
+			var html = "<option value='"+newacct.id+"'>"+newacct.username+"@"+newacct.type+"</option>";
+			$('#accounts').append(html);
+			sch.debug("Added:");
+			sch.debug(newacct);
+			return newacct;
+		}
+
+		Spaz.AccountPrefs.edit = function(id, acctobj) {
+			var savedacct = Spaz.AccountPrefs.spaz_acc.update(id, acctobj);
+			console.debug(savedacct);
+			$('option[value="'+savedacct.id+'"]').html(savedacct.username+"@"+savedacct.type);
+			sch.debug("Edited:");
+			sch.debug(savedacct);
+			return savedacct;
+		}
+
+		
+
+		Spaz.AccountPrefs.getSelectedId = function() {
+			var jqel = $("#accounts option:selected");
+			if (jqel && jqel.length > 0) {
+				return jqel.attr('value');
+			} else {
+				return false;
+			}
+		}
+		
+		/*
+			initialize bindings on DOMReady
+		*/
+		// $().ready( function() {
+		// 		
+		// 	/*
+		// 		bind [+] button to popup
+		// 	*/
+		// 	$('#add_button').click(function() {
+		// 		
+		// 		$('#ok').unbind('click');
+		// 		$('#cancel').unbind('click');
+		// 		
+		// 		
+		// 		$.openDOMWindow({ 
+		// 	        windowSourceID:'#account-details' 
+		// 	    }); 
+		// 	
+		// 		/*
+		// 			populate form
+		// 		*/
+		// 		
+		// 		$('#id_edit').val('');
+		// 		$('#username').val('');
+		// 		$('#password').val('');
+		// 		$('#account-type').val(SPAZCORE_ACCOUNT_TWITTER);
+		// 		
+		// 		/*
+		// 			populate meta
+		// 		*/
+		// 		for (var i=0; i < that.metavals.length; i++) {
+		// 			if (that.checkboxes.indexOf(that.metavals[i]) !== -1) { // is a checkbox
+		// 				$('#'+that.metavals[i]).attr('checked', false);
+		// 			} else {
+		// 				$('#'+that.metavals[i]).val('')
+		// 			}
+		// 			
+		// 		};
+		// 	
+		// 		/*
+		// 			bind add button
+		// 		*/
+		// 		$('#ok').bind('click', function() {
+		// 			var newaccid = add_account(
+		// 				$('#username').val(),
+		// 				$('#password').val(),
+		// 				$('#account-type').val()
+		// 			).id;
+		// 			for (var i=0; i < that.metavals.length; i++) {
+		// 				if (that.checkboxes.indexOf(that.metavals[i]) !== -1) { // is a checkbox
+		// 					var val = !!($('#'+that.metavals[i]+':checked').length) || false;
+		// 				} else {
+		// 					var val = $('#'+that.metavals[i]).val();
+		// 				}
+		// 				that.spaz_acc.setMeta(editedaccid, that.metavals[i], val);
+		// 			};
+		// 
+		// 			
+		// 			$.closeDOMWindow({
+		// 				windowSourceID:'#account-details'
+		// 			});
+		// 		});
+		// 	
+		// 		/*
+		// 			bind cancel button
+		// 		*/
+		// 		$('#cancel').bind('click', function() {
+		// 			$.closeDOMWindow({
+		// 				windowSourceID:'#account-details'
+		// 			});
+		// 		});
+		// 	});
+		// 	
+		// 	/*
+		// 		bind the [-] button
+		// 	*/
+		// 	$('#del_button').click(function() {
+		// 		var id = ui_getSelectedId();
+		// 		if (id) {
+		// 			var deleted = that.spaz_acc.remove(id);
+		// 			$('option[value="'+id+'"]').remove();
+		// 		} else {
+		// 			sch.error('Nothing selected to delete');
+		// 		}
+		// 	});
+		// 	
+		// 	
+		// 	/*
+		// 		bind the [edit] button to modal
+		// 	*/
+		// 	$('#edit_button').click(function() {
+		// 		
+		// 		$('#ok').unbind('click');
+		// 		$('#cancel').unbind('click');
+		// 		
+		// 		
+		// 		var id = ui_getSelectedId();
+		// 		if (id) {
+		// 			var editing = that.spaz_acc.get(id);
+		// 
+		// 			$.openDOMWindow({ 
+		// 		        windowSourceID:'#account-details' 
+		// 		    }); 				
+		// 
+		// 			/*
+		// 				populate form
+		// 			*/
+		// 			
+		// 			$('#id_edit').val(editing.id);
+		// 			$('#username').val(editing.username);
+		// 			$('#password').val(editing.password);
+		// 			$('#account-type').val(editing.type);
+		// 			
+		// 			/*
+		// 				populate meta
+		// 			*/
+		// 			for (var i=0; i < that.metavals.length; i++) {
+		// 				var val = that.spaz_acc.getMeta(editing.id, that.metavals[i]);
+		// 				if (that.checkboxes.indexOf(that.metavals[i]) !== -1) { // is a checkbox
+		// 					$('#'+that.metavals[i]).attr('checked', !!(val));
+		// 				} else {
+		// 					$('#'+that.metavals[i]).val(that.spaz_acc.getMeta(editing.id, that.metavals[i]))
+		// 				}
+		// 				
+		// 			};
+		// 			
+		// 
+		// 			/*
+		// 				bind save button
+		// 			*/
+		// 			$('#ok').click(function() {
+		// 				var editedaccid = edit_account(
+		// 					$('#id_edit').val(),
+		// 					{
+		// 						'username':$('#username').val(),
+		// 						'password':$('#password').val(),
+		// 						'type':$('#account-type').val()
+		// 					}
+		// 				).id;
+		// 
+		// 				for (var i=0; i < that.metavals.length; i++) {
+		// 					if (that.checkboxes.indexOf(that.metavals[i]) !== -1) {
+		// 						var val = !!($('#'+that.metavals[i]+':checked').length) || false;
+		// 					} else {
+		// 						var val = $('#'+that.metavals[i]).val();
+		// 					}
+		// 					that.spaz_acc.setMeta(editedaccid, that.metavals[i], val);
+		// 				};
+		// 				
+		// 				$.closeDOMWindow({
+		// 					windowSourceID:'#editForm'
+		// 				});
+		// 			});
+		// 
+		// 			/*
+		// 				bind cancel button
+		// 			*/
+		// 			$('#cancel').click(function() {
+		// 				$.closeDOMWindow({
+		// 					windowSourceID:'#account-details'
+		// 				});
+		// 			});
+		// 			
+		// 
+		// 		} else {
+		// 			sch.error('Nothing selected to edit');
+		// 		}
+		// 		
+		// 		
+		// 	});
+		// 
+		// 	/*
+		// 		if "custom" is set for type, showthe api-base-url row
+		// 	*/
+		// 	$('#account-type').change(function(){
+		// 		if ($('#account-type').val() === 'custom') {
+		// 			$("#twitter-api-base-url-row").show();
+		// 		} else {
+		// 			$('#twitter-api-base-url-row').hide();
+		// 		}
+		// 	})
+		// 	
+		// 	/*
+		// 		initalize with some data
+		// 	*/
+		// 	var accobj = add_account('testuser', 'fakepassword', SPAZCORE_ACCOUNT_TWITTER);
+		// 	accobj = add_account('testuser', 'fakepassword', SPAZCORE_ACCOUNT_IDENTICA);
+		// 	accobj = add_account('blammo', 'fakepassword', SPAZCORE_ACCOUNT_STATUSNET);
+		// 	
+		// 	
+		// 	/*
+		// 		hide some junk
+		// 	*/
+		// 	$('#account-details').hide();
+		// 	$('#twitter-api-base-url-row').hide();
+		// 	
+		// 	
+		// });
+		// 
+		
+		$().ready(function(){
+			Spaz.AccountPrefs.init();
+		});
+		
+	</script>
+</head>
+
+<body>
+	<h1>Accounts Management Example</h1>
+	
+	<div class="CollapsiblePanelContent">
+		
+		<fieldset id="account-list-fieldset">
+			<legend>Account List</legend>
+			<div>
+				<select name="accounts" id="accounts" size="8">
+				</select>
+			</div>
+			<input type="button" name="add_button" value="+" id="add_button">
+			<input type="button" name="del_button" value="-" id="del_button">
+			<input type="button" name="edit_button" value="edit" id="edit_button">
+		</fieldset>
+		
+		<fieldset id="account-details">
+			
+			<!-- a place to store the ID we're editing -->
+			<input type="hidden" name="id_edit" value="" id="id_edit">
+			
+			<legend>Account Details</legend>
+			<div class="formrow">
+				<label for="username">Username</label>
+				<input type="text" name="username" id="username" value="" />
+			</div>
+			<div class="formrow">
+				<label for="password">Password</label>
+				<input type="password" name="password" id="password" value="" />
+			</div>
+			
+			<div class="formrow">
+				<label for="account-type">Type</label>
+				<select name="account-type" id="account-type">
+					<option value="twitter">Twitter</option>
+					<option value="identi.ca">identi.ca</option>
+					<option value="StatusNet">StatusNet</option>
+					<option value="wordpress.com">Wordpress</option>
+					<option value="tumblr">Tumblr</option>
+					<option value="custom">Custom…</option>
+				</select>
+				
+				<div class="formrow" id='twitter-api-base-url-row'>
+					<label for="twitter-api-base-url">Base API URL </label>
+					<input type="text" name="twitter-api-base-url" id="twitter-api-base-url" value="" />
+				</div>
+
+				<div class="formrow">
+					<input type="checkbox" name="twitter-disable-direct-posting" id="twitter-disable-direct-posting" value="1" />
+					<label for="twitter-disable-direct-posting" class="checkbox">Disable direct posting (will only post via <strong>ping.fm</strong> &amp; other services)</label>
+				</div>
+				
+			</div>
+			
+			<fieldset>
+				<legend>Ping.FM</legend>
+				<div class="formrow">
+					<label for="services-pingfm-userappkey">Ping.fm app key (<a id="pingfm-getkey" href="http://ping.fm/key" class="clickable">Find</a>)</label>
+					<input type="text" name="services-pingfm-userappkey" id="services-pingfm-userappkey" value="" />
+				</div>
+				<div class="formrow">
+					<input type="checkbox" name="services-pingfm-enabled" id="services-pingfm-enabled" value="1" />
+					<label for="services-pingfm-enabled" class="checkbox">Enable posting</label>
+				</div>
+				<div class="formrow">
+					<input type="checkbox" name="services-pingfm-sendreplies" id="services-pingfm-sendreplies" value="1" />
+					<label for="services-pingfm-sendreplies" class="checkbox">Post @replies</label>
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend>Short.ie API</legend>
+				<div class="formrow">
+					<label for="services-shortie-email">Short.ie email address</label>
+					<input type="text" name="services-shortie-email" id="services-shortie-email" value="" />
+				</div>
+				<div class="formrow">
+					<label for="services-shortie-secretkey">Short.ie secret key (<a href="http://short.ie/dev">Get a key</a>)</label>
+					<input type="text" name="services-shortie-secretkey" id="services-shortie-secretkey" value="" />
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend>Image Hosting</legend>
+				<div class="formrow">
+					<input type="checkbox" name="services-twitpic-sharepassword" id="services-twitpic-sharepassword" value="1" />
+					<label for="services-twitpic-sharepassword" class="checkbox">Don't warn about password sharing</label>
+				</div>
+
+			</fieldset>
+			
+			<input type="button" name="ok" value="OK" id="ok">
+			<input type="button" name="cancel" value="Cancel" id="cancel">
+			
+		</fieldset>
+	</div>
+
+</body>
+</html>
